@@ -1,0 +1,40 @@
+{
+  "name": "updo",
+  "version": "1.0.0",
+  "description": "updo — one command to update all your npm tools. Simple. Config-driven. Always up to date.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "updo": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "npm",
+    "update",
+    "upgrade",
+    "cli",
+    "tools",
+    "global",
+    "packages"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "ora": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

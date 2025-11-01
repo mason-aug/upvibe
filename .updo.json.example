@@ -1,0 +1,48 @@
+{
+  "packageManager": "npm",
+  "packages": [
+    {
+      "name": "@openai/codex",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
+      "name": "@anthropic-ai/claude-code",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
+      "name": "typescript",
+      "global": true,
+      "strategy": "minor"
+    },
+    {
+      "name": "eslint",
+      "global": true,
+      "strategy": "patch"
+    },
+    {
+      "name": "prettier",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
+      "name": "create-react-app",
+      "global": true,
+      "strategy": "latest",
+      "postinstall": [
+        "echo 'create-react-app installed successfully!'"
+      ]
+    },
+    {
+      "name": "vercel",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
+      "name": "nodemon",
+      "global": true,
+      "strategy": "latest"
+    }
+  ]
+}
