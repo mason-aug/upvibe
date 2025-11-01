@@ -1,0 +1,15 @@
+{
+  "packageManager": "npm",
+  "packages": [
+    {
+      "name": "@openai/codex",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
+      "name": "@anthropic-ai/claude-code",
+      "global": true,
+      "strategy": "latest"
+    }
+  ]
+}
