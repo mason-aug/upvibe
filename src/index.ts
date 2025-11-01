@@ -10,8 +10,8 @@ import type { PackageManager } from './types.js';
 const program = new Command();
 
 program
-  .name('upvibee')
-  .description('upvibee — one command to update all your npm packages')
+  .name('upvibe')
+  .description('upvibe — one command to update all your npm packages')
   .version('1.0.0');
 
 // Update command
@@ -26,11 +26,11 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibee.json')} in:`));
+        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibe.json')} in:`));
         getConfigPaths().forEach(path => {
           console.error(chalk.gray(`  • ${path}`));
         });
-        console.error(chalk.cyan('\nCreate a .upvibee.json file with your package configuration.'));
+        console.error(chalk.cyan('\nCreate a .upvibe.json file with your package configuration.'));
         process.exit(1);
       }
 
@@ -95,7 +95,7 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibee.json')} in:`));
+        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibe.json')} in:`));
         getConfigPaths().forEach(path => {
           console.error(chalk.gray(`  • ${path}`));
         });
@@ -195,7 +195,7 @@ program
         console.log(chalk.gray(`   Postinstall: ${packageConfig.postinstall.length} command(s)`));
       }
 
-      console.log(chalk.cyan('\nRun "upvibee update" to install the package'));
+      console.log(chalk.cyan('\nRun "upvibe update" to install the package'));
 
     } catch (error) {
       console.error(chalk.red('❌ Error adding package:'), error);

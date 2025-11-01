@@ -1,6 +1,6 @@
-# upvibee
+# upvibe
 
-> **upvibee — one command to update all your npm packages.**
+> **upvibe — one command to update all your npm packages.**
 > Simple. Config-driven. Always vibing.
 
 A lightweight CLI tool that updates all your globally installed npm packages with a single command, based on a configuration file.
@@ -19,13 +19,13 @@ A lightweight CLI tool that updates all your globally installed npm packages wit
 
 ```bash
 # Install globally with npm
-npm install -g upvibee
+npm install -g upvibe
 
 # Or with pnpm
-pnpm add -g upvibee
+pnpm add -g upvibe
 
 # Or with yarn
-yarn global add upvibee
+yarn global add upvibe
 ```
 
 ### Development Installation
@@ -33,7 +33,7 @@ yarn global add upvibee
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd upvibee
+cd upvibe
 
 # Install dependencies
 npm install
@@ -47,7 +47,7 @@ npm link
 
 ## Configuration
 
-Create a `.upvibee.json` file in your project directory or home directory (`~/upvibebe.json`):
+Create a `.upvibe.json` file in your project directory or home directory (`~/upvibebe.json`):
 
 ```json
 {
@@ -114,13 +114,13 @@ Create a `.upvibee.json` file in your project directory or home directory (`~/up
 ### Update all packages
 
 ```bash
-upvibee update
+upvibe update
 # or use short command
-upvibee u
+upvibe u
 ```
 
 This command:
-1. Reads configuration from `.upvibee.json` (local) or `~/upvibebe.json` (home)
+1. Reads configuration from `.upvibe.json` (local) or `~/upvibebe.json` (home)
 2. Selects package manager in order of priority:
    - Command line option (`--manager`)
    - Config file setting (`packageManager`)
@@ -133,28 +133,28 @@ This command:
 ### Specify package manager
 
 ```bash
-upvibee update --manager pnpm
-upvibee update -m yarn
+upvibe update --manager pnpm
+upvibe update -m yarn
 ```
 
 ### Add a package to configuration
 
 ```bash
 # Add with defaults (global: true, strategy: latest)
-upvibee add typescript
+upvibe add typescript
 
 # Add with specific strategy
-upvibee add eslint --strategy patch
-upvibee add prettier -s minor
+upvibe add eslint --strategy patch
+upvibe add prettier -s minor
 
 # Add with pinned version
-upvibee add @types/node --strategy pinned --version 20.10.5
+upvibe add @types/node --strategy pinned --version 20.10.5
 
 # Add as local package
-upvibee add some-package --global false
+upvibe add some-package --global false
 
 # Add with post-install commands
-upvibee add create-react-app --postinstall "echo 'CRA installed!'"
+upvibe add create-react-app --postinstall "echo 'CRA installed!'"
 ```
 
 Options:
@@ -166,13 +166,13 @@ Options:
 ### Remove a package from configuration
 
 ```bash
-upvibee remove typescript
+upvibe remove typescript
 ```
 
 ### List configured packages
 
 ```bash
-upvibee list
+upvibe list
 ```
 
 Shows all configured packages with their settings:
@@ -185,7 +185,7 @@ Shows all configured packages with their settings:
 ### Check system compatibility
 
 ```bash
-upvibee doctor
+upvibe doctor
 ```
 
 Runs a system check showing:
@@ -197,7 +197,7 @@ Runs a system check showing:
 ## Example Output
 
 ```bash
-$ upvibee update
+$ upvibe update
 
 🚀 Updating packages with npm...
 
