@@ -64,27 +64,6 @@ Create a `.upvibe.json` file in your project directory or home directory (`~/upv
       "strategy": "latest"
     },
     {
-      "name": "typescript",
-      "global": true,
-      "strategy": "minor"
-    },
-    {
-      "name": "eslint",
-      "global": true,
-      "strategy": "patch"
-    },
-    {
-      "name": "prettier",
-      "global": true,
-      "strategy": "latest"
-    },
-    {
-      "name": "@types/node",
-      "global": true,
-      "strategy": "pinned",
-      "version": "20.10.5"
-    },
-    {
       "name": "create-react-app",
       "global": true,
       "postinstall": ["echo 'CRA updated!'"]
