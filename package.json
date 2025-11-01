@@ -1,11 +1,11 @@
 {
-  "name": "updo",
+  "name": "pkgup",
   "version": "1.0.0",
-  "description": "updo — one command to update all your npm tools. Simple. Config-driven. Always up to date.",
+  "description": "pkgup — one command to update all your npm packages. Simple. Config-driven. Always up to date.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "updo": "dist/index.js"
+    "pkgup": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -26,12 +26,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mason-aug/updo.git"
+    "url": "git+https://github.com/mason-aug/pkgup.git"
   },
   "bugs": {
-    "url": "https://github.com/mason-aug/updo/issues"
+    "url": "https://github.com/mason-aug/pkgup/issues"
   },
-  "homepage": "https://github.com/mason-aug/updo#readme",
+  "homepage": "https://github.com/mason-aug/pkgup#readme",
   "engines": {
     "node": ">=18.0.0"
   },

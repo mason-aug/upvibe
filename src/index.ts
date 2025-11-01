@@ -10,8 +10,8 @@ import type { PackageManager } from './types.js';
 const program = new Command();
 
 program
-  .name('updo')
-  .description('updo — one command to update all your npm tools')
+  .name('pkgup')
+  .description('pkgup — one command to update all your npm packages')
   .version('1.0.0');
 
 // Update command
@@ -26,11 +26,11 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.updo.json')} in:`));
+        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.pkgup.json')} in:`));
         getConfigPaths().forEach(path => {
           console.error(chalk.gray(`  • ${path}`));
         });
-        console.error(chalk.cyan('\nCreate a .updo.json file with your package configuration.'));
+        console.error(chalk.cyan('\nCreate a .pkgup.json file with your package configuration.'));
         process.exit(1);
       }
 
@@ -95,7 +95,7 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.updo.json')} in:`));
+        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.pkgup.json')} in:`));
         getConfigPaths().forEach(path => {
           console.error(chalk.gray(`  • ${path}`));
         });
@@ -195,7 +195,7 @@ program
         console.log(chalk.gray(`   Postinstall: ${packageConfig.postinstall.length} command(s)`));
       }
 
-      console.log(chalk.cyan('\nRun "updo update" to install the package'));
+      console.log(chalk.cyan('\nRun "pkgup update" to install the package'));
 
     } catch (error) {
       console.error(chalk.red('❌ Error adding package:'), error);

@@ -1,6 +1,6 @@
-# updo
+# pkgup
 
-> **updo — one command to update all your npm tools.**
+> **pkgup — one command to update all your npm packages.**
 > Simple. Config-driven. Always up to date.
 
 A lightweight CLI tool that updates all your globally installed npm packages with a single command, based on a configuration file.
@@ -19,13 +19,13 @@ A lightweight CLI tool that updates all your globally installed npm packages wit
 
 ```bash
 # Install globally with npm
-npm install -g updo
+npm install -g pkgup
 
 # Or with pnpm
-pnpm add -g updo
+pnpm add -g pkgup
 
 # Or with yarn
-yarn global add updo
+yarn global add pkgup
 ```
 
 ### Development Installation
@@ -33,7 +33,7 @@ yarn global add updo
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd updo
+cd pkgup
 
 # Install dependencies
 npm install
@@ -47,7 +47,7 @@ npm link
 
 ## Configuration
 
-Create a `.updo.json` file in your project directory or home directory (`~/.updo.json`):
+Create a `.pkgup.json` file in your project directory or home directory (`~/.pkgup.json`):
 
 ```json
 {
@@ -114,13 +114,13 @@ Create a `.updo.json` file in your project directory or home directory (`~/.updo
 ### Update all packages
 
 ```bash
-updo update
+pkgup update
 # or use short command
-updo u
+pkgup u
 ```
 
 This command:
-1. Reads configuration from `.updo.json` (local) or `~/.updo.json` (home)
+1. Reads configuration from `.pkgup.json` (local) or `~/.pkgup.json` (home)
 2. Selects package manager in order of priority:
    - Command line option (`--manager`)
    - Config file setting (`packageManager`)
@@ -133,28 +133,28 @@ This command:
 ### Specify package manager
 
 ```bash
-updo update --manager pnpm
-updo update -m yarn
+pkgup update --manager pnpm
+pkgup update -m yarn
 ```
 
 ### Add a package to configuration
 
 ```bash
 # Add with defaults (global: true, strategy: latest)
-updo add typescript
+pkgup add typescript
 
 # Add with specific strategy
-updo add eslint --strategy patch
-updo add prettier -s minor
+pkgup add eslint --strategy patch
+pkgup add prettier -s minor
 
 # Add with pinned version
-updo add @types/node --strategy pinned --version 20.10.5
+pkgup add @types/node --strategy pinned --version 20.10.5
 
 # Add as local package
-updo add some-package --global false
+pkgup add some-package --global false
 
 # Add with post-install commands
-updo add create-react-app --postinstall "echo 'CRA installed!'"
+pkgup add create-react-app --postinstall "echo 'CRA installed!'"
 ```
 
 Options:
@@ -166,13 +166,13 @@ Options:
 ### Remove a package from configuration
 
 ```bash
-updo remove typescript
+pkgup remove typescript
 ```
 
 ### List configured packages
 
 ```bash
-updo list
+pkgup list
 ```
 
 Shows all configured packages with their settings:
@@ -185,7 +185,7 @@ Shows all configured packages with their settings:
 ### Check system compatibility
 
 ```bash
-updo doctor
+pkgup doctor
 ```
 
 Runs a system check showing:
@@ -197,7 +197,7 @@ Runs a system check showing:
 ## Example Output
 
 ```bash
-$ updo update
+$ pkgup update
 
 🚀 Updating packages with npm...
 

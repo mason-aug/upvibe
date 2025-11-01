@@ -3,7 +3,7 @@ import path from 'path';
 import { homedir } from 'os';
 import type { UpdoConfig, PackageConfig } from './types.js';
 
-const CONFIG_FILENAME = '.updo.json';
+const CONFIG_FILENAME = '.pkgup.json';
 
 export async function loadConfig(): Promise<UpdoConfig | null> {
   // Check local config first

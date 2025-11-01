@@ -32,6 +32,6 @@ logs/
 *.log
 
 # Config (keep example, ignore actual)
-.updo.json
+.pkgup.json
 
 .claude/settings.local.json
