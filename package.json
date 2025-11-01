@@ -22,8 +22,16 @@
     "global",
     "packages"
   ],
-  "author": "",
+  "author": "Mason",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mason-aug/updo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mason-aug/updo/issues"
+  },
+  "homepage": "https://github.com/mason-aug/updo#readme",
   "engines": {
     "node": ">=18.0.0"
   },
