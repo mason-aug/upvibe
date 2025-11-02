@@ -6,31 +6,58 @@ import type { UpdoConfig, PackageConfig } from './types.js';
 const CONFIG_FILENAME = '.upvibe.json';
 
 export async function loadConfig(): Promise<UpdoConfig | null> {
+  let config: UpdoConfig | null = null;
+  let configPath: string | null = null;
+
   // Check local config first
   const localConfigPath = path.resolve(process.cwd(), CONFIG_FILENAME);
 
   try {
-    const config = await readConfigFile(localConfigPath);
+    config = await readConfigFile(localConfigPath);
     if (config) {
-      return config;
+      configPath = localConfigPath;
     }
   } catch {
     // Local config not found, continue
   }
 
-  // Check home directory config
-  const homeConfigPath = path.join(homedir(), CONFIG_FILENAME);
+  // Check home directory config if not found locally
+  if (!config) {
+    const homeConfigPath = path.join(homedir(), CONFIG_FILENAME);
 
-  try {
-    const config = await readConfigFile(homeConfigPath);
-    if (config) {
-      return config;
+    try {
+      config = await readConfigFile(homeConfigPath);
+      if (config) {
+        configPath = homeConfigPath;
+      }
+    } catch {
+      // Home config not found
     }
-  } catch {
-    // Home config not found
   }
 
-  return null;
+  // If we have a config, check if upvibe itself is in it
+  if (config && configPath) {
+    const hasUpvibe = config.packages.some(pkg => pkg.name === 'upvibe');
+
+    if (!hasUpvibe) {
+      // Add upvibe to the configuration
+      config.packages.unshift({
+        name: 'upvibe',
+        global: true,
+        strategy: 'latest'
+      });
+
+      // Save the updated configuration
+      try {
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+      } catch (error) {
+        // Silently ignore save errors to not disrupt the flow
+        console.error(`Could not auto-add upvibe to configuration: ${error}`);
+      }
+    }
+  }
+
+  return config;
 }
 
 async function readConfigFile(filePath: string): Promise<UpdoConfig | null> {
@@ -110,12 +137,23 @@ export async function addPackageToConfig(packageName: string, options?: Partial<
 
   // Load existing config or create new one
   let config: UpdoConfig;
+  let isNewConfig = false;
   try {
     const content = await fs.readFile(configPath, 'utf-8');
     config = JSON.parse(content);
   } catch {
     // Config doesn't exist, create new one
     config = { packages: [] };
+    isNewConfig = true;
+  }
+
+  // If this is a new config and we're not adding upvibe itself, add upvibe first
+  if (isNewConfig && packageName !== 'upvibe') {
+    config.packages.push({
+      name: 'upvibe',
+      global: true,
+      strategy: 'latest'
+    });
   }
 
   // Check if package already exists

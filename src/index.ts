@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('upvibe')
   .description('upvibe — one command to update all your npm packages')
-  .version('1.0.0');
+  .version('1.2.0');
 
 // Update command
 program
