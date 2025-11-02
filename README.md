@@ -54,6 +54,11 @@ Create a `.upvibe.json` file in your project directory or home directory (`~/upv
   "packageManager": "npm",
   "packages": [
     {
+      "name": "upvibe",
+      "global": true,
+      "strategy": "latest"
+    },
+    {
       "name": "@openai/codex",
       "global": true,
       "strategy": "latest"
@@ -62,11 +67,6 @@ Create a `.upvibe.json` file in your project directory or home directory (`~/upv
       "name": "@anthropic-ai/claude-code",
       "global": true,
       "strategy": "latest"
-    },
-    {
-      "name": "create-react-app",
-      "global": true,
-      "postinstall": ["echo 'CRA updated!'"]
     }
   ]
 }
