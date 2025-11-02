@@ -12,6 +12,8 @@ interface UpdateResult {
   package: string;
   error?: string;
   version?: string;
+  currentVersion?: string;
+  updateType?: 'major' | 'minor' | 'patch' | 'none';
 }
 
 export async function updatePackages(
@@ -35,22 +37,55 @@ async function updatePackage(
   packageManager: PackageManager
 ): Promise<UpdateResult> {
   const spinner = ora({
-    text: `Updating ${chalk.bold(pkg.name)}...`,
+    text: `Checking ${chalk.bold(pkg.name)}...`,
     prefixText: '🔄'
   }).start();
 
   try {
+    // Get current version before update
+    const isGlobal = pkg.global !== false;
+    const currentVersion = await getCurrentVersion(pkg.name, isGlobal);
+
+    // Get target version
     const targetVersion = await getTargetVersion(pkg);
+
+    // If target is 'latest', we need to get actual version for comparison
+    let actualTargetVersion = targetVersion;
+    if (targetVersion === 'latest') {
+      try {
+        const { stdout } = await execAsync(`npm view ${pkg.name} version`, { encoding: 'utf-8' });
+        actualTargetVersion = stdout.trim();
+      } catch {
+        // Keep 'latest' if we can't determine actual version
+      }
+    }
+
+    // Determine update type
+    const updateType = determineUpdateType(currentVersion, actualTargetVersion);
+
+    // Build version change display
+    let versionDisplay = '';
+    if (currentVersion && actualTargetVersion !== 'latest') {
+      const updateTypeLabel = updateType !== 'none' ? ` (${updateType} update)` : '';
+      versionDisplay = `${currentVersion} → ${actualTargetVersion}${updateTypeLabel}`;
+      spinner.text = `Updating ${chalk.bold(pkg.name)}: ${chalk.cyan(versionDisplay)}`;
+    } else if (!currentVersion) {
+      versionDisplay = `installing ${actualTargetVersion}`;
+      spinner.text = `Installing ${chalk.bold(pkg.name)} ${chalk.cyan(actualTargetVersion)}`;
+    } else {
+      versionDisplay = `updating to ${targetVersion}`;
+      spinner.text = `Updating ${chalk.bold(pkg.name)} to ${targetVersion}`;
+    }
+
     const command = getInstallCommand(
       packageManager,
       pkg.name,
       targetVersion,
-      pkg.global !== false
+      isGlobal
     );
 
     // Execute the update command
-    spinner.text = `Installing ${chalk.bold(pkg.name)} with ${packageManager}...`;
-    const { stdout, stderr } = await execAsync(command, {
+    await execAsync(command, {
       env: { ...process.env, NODE_ENV: 'production' }
     });
 
@@ -62,12 +97,22 @@ async function updatePackage(
       }
     }
 
-    spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)} to ${targetVersion}`));
+    // Success message with version change
+    if (currentVersion && actualTargetVersion !== 'latest') {
+      const updateTypeLabel = updateType !== 'none' ? chalk.gray(` (${updateType})`) : '';
+      spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)}: ${chalk.cyan(currentVersion)} → ${chalk.cyan(actualTargetVersion)}${updateTypeLabel}`));
+    } else if (!currentVersion) {
+      spinner.succeed(chalk.green(`✅ Installed ${chalk.bold(pkg.name)} ${chalk.cyan(actualTargetVersion)}`));
+    } else {
+      spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)} to ${targetVersion}`));
+    }
 
     return {
       success: true,
       package: pkg.name,
-      version: targetVersion
+      version: actualTargetVersion,
+      currentVersion: currentVersion || undefined,
+      updateType
     };
   } catch (error) {
     let errorMessage: string;
@@ -168,6 +213,52 @@ async function getVersionByStrategy(
   }
 }
 
+async function getCurrentVersion(packageName: string, isGlobal: boolean = true): Promise<string | null> {
+  try {
+    const command = isGlobal
+      ? `npm list -g ${packageName} --json`
+      : `npm list ${packageName} --json`;
+
+    const { stdout } = await execAsync(command, { encoding: 'utf-8' });
+    const data = JSON.parse(stdout);
+    const version = data.dependencies?.[packageName]?.version;
+
+    return version || null;
+  } catch (error) {
+    // Package might not be installed
+    return null;
+  }
+}
+
+function determineUpdateType(currentVersion: string | null, targetVersion: string): 'major' | 'minor' | 'patch' | 'none' {
+  if (!currentVersion || targetVersion === 'latest') {
+    return 'none';
+  }
+
+  // Clean version strings (remove any pre-release/build metadata)
+  const cleanVersion = (v: string) => v.split('-')[0].split('+')[0];
+
+  const current = cleanVersion(currentVersion).split('.').map(Number);
+  const target = cleanVersion(targetVersion).split('.').map(Number);
+
+  // Handle cases where version parts might be missing
+  while (current.length < 3) current.push(0);
+  while (target.length < 3) target.push(0);
+
+  const [currMajor, currMinor, currPatch] = current;
+  const [targetMajor, targetMinor, targetPatch] = target;
+
+  if (targetMajor > currMajor) {
+    return 'major';
+  } else if (targetMajor === currMajor && targetMinor > currMinor) {
+    return 'minor';
+  } else if (targetMajor === currMajor && targetMinor === currMinor && targetPatch > currPatch) {
+    return 'patch';
+  } else {
+    return 'none';
+  }
+}
+
 export function printSummary(results: UpdateResult[]): void {
   console.log(chalk.bold.cyan('\n📊 Update Summary:\n'));
 
@@ -177,7 +268,18 @@ export function printSummary(results: UpdateResult[]): void {
   if (successful.length > 0) {
     console.log(chalk.green(`✅ Successfully updated ${successful.length} package(s):`));
     successful.forEach(r => {
-      console.log(chalk.green(`   • ${r.package} ${r.version ? `(${r.version})` : ''}`));
+      let versionInfo = '';
+      if (r.currentVersion && r.version) {
+        const updateTypeLabel = r.updateType && r.updateType !== 'none'
+          ? chalk.gray(` (${r.updateType})`)
+          : '';
+        versionInfo = `: ${chalk.cyan(r.currentVersion)} → ${chalk.cyan(r.version)}${updateTypeLabel}`;
+      } else if (!r.currentVersion && r.version) {
+        versionInfo = `: ${chalk.cyan('new install')} → ${chalk.cyan(r.version)}`;
+      } else if (r.version) {
+        versionInfo = `: ${chalk.cyan(r.version)}`;
+      }
+      console.log(chalk.green(`   • ${r.package}${versionInfo}`));
     });
   }
 
