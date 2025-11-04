@@ -112,7 +112,7 @@ export function getConfigPaths(): string[] {
 }
 
 export async function getConfigPath(): Promise<string> {
-  // Check if local config exists
+  // Check if local config exists first (prefer local when both exist)
   const localConfigPath = path.resolve(process.cwd(), CONFIG_FILENAME);
   try {
     await fs.access(localConfigPath);
@@ -127,8 +127,8 @@ export async function getConfigPath(): Promise<string> {
     await fs.access(homeConfigPath);
     return homeConfigPath;
   } catch {
-    // Neither exists, prefer local for new config
-    return localConfigPath;
+    // Neither exists, prefer global (home) for new config
+    return homeConfigPath;
   }
 }
 

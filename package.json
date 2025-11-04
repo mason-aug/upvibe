@@ -1,6 +1,6 @@
 {
   "name": "upvibe",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "upvibe — one command to upgrade dependencies with ease. Simple. Config-driven. Always vibing.",
   "type": "module",
   "main": "dist/index.js",

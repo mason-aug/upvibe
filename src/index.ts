@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('upvibe')
   .description('upvibe — one command to update all your npm packages')
-  .version('1.3.0');
+  .version('1.4.0');
 
 // Update command
 program
@@ -26,11 +26,11 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibe.json')} in:`));
-        getConfigPaths().forEach(path => {
-          console.error(chalk.gray(`  • ${path}`));
-        });
-        console.error(chalk.cyan('\nCreate a .upvibe.json file with your package configuration.'));
+        console.error(chalk.yellow('\nWould you like to add these packages?'));
+        console.error(chalk.cyan('  • @openai/codex'));
+        console.error(chalk.cyan('  • @anthropic-ai/claude-code'));
+        console.error(chalk.yellow('\nAdd both packages with one command:'));
+        console.error(chalk.gray('  upvibe add @openai/codex @anthropic-ai/claude-code'));
         process.exit(1);
       }
 
@@ -95,10 +95,11 @@ program
       const config = await loadConfig();
       if (!config) {
         console.error(chalk.red('❌ No configuration file found!'));
-        console.error(chalk.yellow(`\nLooked for ${chalk.bold('.upvibe.json')} in:`));
-        getConfigPaths().forEach(path => {
-          console.error(chalk.gray(`  • ${path}`));
-        });
+        console.error(chalk.yellow('\nWould you like to add these packages?'));
+        console.error(chalk.cyan('  • @openai/codex'));
+        console.error(chalk.cyan('  • @anthropic-ai/claude-code'));
+        console.error(chalk.yellow('\nAdd both packages with one command:'));
+        console.error(chalk.gray('  upvibe add @openai/codex @anthropic-ai/claude-code'));
         process.exit(1);
       }
 
@@ -136,13 +137,13 @@ program
 
 // Add command
 program
-  .command('add <package>')
-  .description('Add a package to the configuration')
+  .command('add <packages...>')
+  .description('Add one or more packages to the configuration')
   .option('-g, --global <boolean>', 'install globally (default: true)', 'true')
   .option('-s, --strategy <strategy>', 'update strategy: latest, minor, patch, pinned (default: latest)', 'latest')
   .option('-v, --version <version>', 'specific version (only for pinned strategy)')
   .option('-p, --postinstall <commands...>', 'post-install commands to run')
-  .action(async (packageName, options) => {
+  .action(async (packages, options) => {
     try {
       // Parse global option
       const global = options.global === 'true' || options.global === true;
@@ -178,12 +179,26 @@ program
           : [options.postinstall];
       }
 
-      // Add package to config
-      await addPackageToConfig(packageName, packageConfig);
-
+      // Add each package to config
       const configPath = await getConfigPath();
-      console.log(chalk.green(`✅ Added ${chalk.bold(packageName)} to configuration`));
-      console.log(chalk.gray(`   Config file: ${configPath}`));
+      const addedPackages: string[] = [];
+
+      for (const packageName of packages) {
+        await addPackageToConfig(packageName, packageConfig);
+        addedPackages.push(packageName);
+      }
+
+      // Display summary
+      if (addedPackages.length === 1) {
+        console.log(chalk.green(`✅ Added ${chalk.bold(addedPackages[0])} to configuration`));
+      } else {
+        console.log(chalk.green(`✅ Added ${addedPackages.length} packages to configuration:`));
+        addedPackages.forEach(pkg => {
+          console.log(chalk.green(`   • ${pkg}`));
+        });
+      }
+
+      console.log(chalk.gray(`\n   Config file: ${configPath}`));
       console.log(chalk.gray(`   Global: ${global}`));
       console.log(chalk.gray(`   Strategy: ${options.strategy}`));
 
@@ -195,10 +210,10 @@ program
         console.log(chalk.gray(`   Postinstall: ${packageConfig.postinstall.length} command(s)`));
       }
 
-      console.log(chalk.cyan('\nRun "upvibe update" to install the package'));
+      console.log(chalk.cyan('\nRun "upvibe update" to install the packages'));
 
     } catch (error) {
-      console.error(chalk.red('❌ Error adding package:'), error);
+      console.error(chalk.red('❌ Error adding packages:'), error);
       process.exit(1);
     }
   });
