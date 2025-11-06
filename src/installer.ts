@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -6,6 +6,43 @@ import type { PackageConfig, PackageManager, UpdateStrategy } from './types.js';
 import { getInstallCommand } from './packageManager.js';
 
 const execAsync = promisify(exec);
+
+/**
+ * Execute a command using spawn for better output handling
+ * Captures stderr for error messages but suppresses stdout to not interfere with spinners
+ */
+function spawnAsync(command: string, options?: { env?: NodeJS.ProcessEnv }): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let stderr = '';
+
+    const child = spawn(command, {
+      shell: true,
+      stdio: ['ignore', 'ignore', 'pipe'],  // Ignore stdin/stdout, capture stderr
+      env: options?.env || process.env
+    });
+
+    // Capture stderr for error reporting
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+    }
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        const error: any = new Error(`Command failed with exit code ${code}`);
+        error.stderr = stderr.trim();
+        reject(error);
+      }
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
 
 interface UpdateResult {
   success: boolean;
@@ -36,9 +73,15 @@ async function updatePackage(
   pkg: PackageConfig,
   packageManager: PackageManager
 ): Promise<UpdateResult> {
+  // Force flush any pending output before starting
+  if (process.stdout.isTTY) {
+    process.stdout.write('');
+  }
+
   const spinner = ora({
     text: `Checking ${chalk.bold(pkg.name)}...`,
-    prefixText: '🔄'
+    prefixText: '🔄',
+    stream: process.stdout
   }).start();
 
   try {
@@ -84,8 +127,8 @@ async function updatePackage(
       isGlobal
     );
 
-    // Execute the update command
-    await execAsync(command, {
+    // Execute the update command using spawn for better control
+    await spawnAsync(command, {
       env: { ...process.env, NODE_ENV: 'production' }
     });
 
@@ -93,7 +136,7 @@ async function updatePackage(
     if (pkg.postinstall && pkg.postinstall.length > 0) {
       spinner.text = `Running postinstall for ${chalk.bold(pkg.name)}...`;
       for (const cmd of pkg.postinstall) {
-        await execAsync(cmd);
+        await spawnAsync(cmd);
       }
     }
 
@@ -105,6 +148,11 @@ async function updatePackage(
       spinner.succeed(chalk.green(`✅ Installed ${chalk.bold(pkg.name)} ${chalk.cyan(actualTargetVersion)}`));
     } else {
       spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)} to ${targetVersion}`));
+    }
+
+    // Force flush output to ensure spinner message is displayed immediately
+    if (process.stdout.isTTY) {
+      process.stdout.write('');
     }
 
     return {
@@ -130,6 +178,11 @@ async function updatePackage(
 
     spinner.fail(chalk.red(`❌ Failed to update ${chalk.bold(pkg.name)}`));
     console.error(chalk.gray(`   Error: ${errorMessage.split('\n')[0]}`));
+
+    // Force flush output
+    if (process.stdout.isTTY) {
+      process.stdout.write('');
+    }
 
     return {
       success: false,
@@ -259,7 +312,10 @@ function determineUpdateType(currentVersion: string | null, targetVersion: strin
   }
 }
 
-export function printSummary(results: UpdateResult[]): void {
+export async function printSummary(results: UpdateResult[]): Promise<void> {
+  // Small delay to ensure all spinner outputs are flushed
+  await new Promise(resolve => setImmediate(resolve));
+
   console.log(chalk.bold.cyan('\n📊 Update Summary:\n'));
 
   const successful = results.filter(r => r.success);

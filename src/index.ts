@@ -74,7 +74,7 @@ program
       const results = await updatePackages(config.packages, packageManager);
 
       // Print summary
-      printSummary(results);
+      await printSummary(results);
 
       // Exit with error code if any updates failed
       const hasFailures = results.some(r => !r.success);
