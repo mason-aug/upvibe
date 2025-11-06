@@ -63,7 +63,7 @@ src/
 
 ### Key Architectural Patterns
 
-1. **Configuration Loading**: Searches for `.upvibe.json` first in current directory, then in home directory (`~/`). Configuration is validated on load.
+1. **Configuration Loading**: Loads `.upvibe.json` from the home directory (`~/`). Configuration is validated on load.
 
 2. **Package Manager Abstraction**: Supports npm, yarn, and pnpm through a unified interface. Detection order: CLI flag → config file → auto-detect → fallback to npm.
 

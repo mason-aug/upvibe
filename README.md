@@ -47,7 +47,7 @@ npm link
 
 ## Configuration
 
-Create a `.upvibe.json` file in your project directory or home directory (`~/upvibebe.json`):
+Create a `.upvibe.json` file in your home directory (`~/.upvibe.json`):
 
 ```json
 {
@@ -99,7 +99,7 @@ upvibe u
 ```
 
 This command:
-1. Reads configuration from `.upvibe.json` (local) or `~/upvibebe.json` (home)
+1. Reads configuration from `~/.upvibe.json` in your home directory
 2. Selects package manager in order of priority:
    - Command line option (`--manager`)
    - Config file setting (`packageManager`)
