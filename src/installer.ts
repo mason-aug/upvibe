@@ -127,6 +127,9 @@ async function updatePackage(
       isGlobal
     );
 
+    // Print the actual command being executed
+    spinner.text = `${chalk.bold(pkg.name)}: ${chalk.gray(command)}`;
+
     // Execute the update command using spawn for better control
     await spawnAsync(command, {
       env: { ...process.env, NODE_ENV: 'production' }

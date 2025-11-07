@@ -9,30 +9,16 @@ export async function loadConfig(): Promise<UpdoConfig | null> {
   let config: UpdoConfig | null = null;
   let configPath: string | null = null;
 
-  // Check local config first
-  const localConfigPath = path.resolve(process.cwd(), CONFIG_FILENAME);
+  // Check home directory config only
+  const homeConfigPath = path.join(homedir(), CONFIG_FILENAME);
 
   try {
-    config = await readConfigFile(localConfigPath);
+    config = await readConfigFile(homeConfigPath);
     if (config) {
-      configPath = localConfigPath;
+      configPath = homeConfigPath;
     }
   } catch {
-    // Local config not found, continue
-  }
-
-  // Check home directory config if not found locally
-  if (!config) {
-    const homeConfigPath = path.join(homedir(), CONFIG_FILENAME);
-
-    try {
-      config = await readConfigFile(homeConfigPath);
-      if (config) {
-        configPath = homeConfigPath;
-      }
-    } catch {
-      // Home config not found
-    }
+    // Home config not found
   }
 
   // If we have a config, check if upvibe itself is in it
@@ -106,30 +92,14 @@ export function validatePackageConfig(pkg: PackageConfig): string[] {
 
 export function getConfigPaths(): string[] {
   return [
-    path.resolve(process.cwd(), CONFIG_FILENAME),
     path.join(homedir(), CONFIG_FILENAME)
   ];
 }
 
 export async function getConfigPath(): Promise<string> {
-  // Check if local config exists first (prefer local when both exist)
-  const localConfigPath = path.resolve(process.cwd(), CONFIG_FILENAME);
-  try {
-    await fs.access(localConfigPath);
-    return localConfigPath;
-  } catch {
-    // Local doesn't exist, check home
-  }
-
-  // Check if home config exists
+  // Always use home directory for configuration
   const homeConfigPath = path.join(homedir(), CONFIG_FILENAME);
-  try {
-    await fs.access(homeConfigPath);
-    return homeConfigPath;
-  } catch {
-    // Neither exists, prefer global (home) for new config
-    return homeConfigPath;
-  }
+  return homeConfigPath;
 }
 
 export async function addPackageToConfig(packageName: string, options?: Partial<PackageConfig>): Promise<void> {
