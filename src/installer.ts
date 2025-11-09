@@ -2,7 +2,7 @@ import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import chalk from 'chalk';
 import ora from 'ora';
-import type { PackageConfig, PackageManager, UpdateStrategy } from './types.js';
+import type { PackageConfig, PackageManager } from './types.js';
 import { getInstallCommand } from './packageManager.js';
 
 const execAsync = promisify(exec);
@@ -53,6 +53,8 @@ interface UpdateResult {
   updateType?: 'major' | 'minor' | 'patch' | 'none';
 }
 
+
+
 export async function updatePackages(
   packages: PackageConfig[],
   packageManager: PackageManager
@@ -92,29 +94,44 @@ async function updatePackage(
     // Get target version
     const targetVersion = await getTargetVersion(pkg);
 
-    // If target is 'latest', we need to get actual version for comparison
-    let actualTargetVersion = targetVersion;
+    // Always get the actual latest version for comparison
+    let actualLatestVersion = targetVersion;
     if (targetVersion === 'latest') {
       try {
         const { stdout } = await execAsync(`npm view ${pkg.name} version`, { encoding: 'utf-8' });
-        actualTargetVersion = stdout.trim();
+        actualLatestVersion = stdout.trim();
       } catch {
         // Keep 'latest' if we can't determine actual version
+        actualLatestVersion = 'latest';
       }
     }
 
-    // Determine update type
-    const updateType = determineUpdateType(currentVersion, actualTargetVersion);
+    // Check if already at target version before attempting update
+    if (currentVersion && actualLatestVersion !== 'latest' && currentVersion === actualLatestVersion) {
+      spinner.succeed(chalk.blue(`✔ ${chalk.bold(pkg.name)} is already at the latest version ${chalk.cyan(currentVersion)}`));
+
+      // Force flush output
+      if (process.stdout.isTTY) {
+        process.stdout.write('');
+      }
+
+      return {
+        success: true,
+        package: pkg.name,
+        version: currentVersion,
+        currentVersion: currentVersion,
+        updateType: 'none'
+      };
+    }
 
     // Build version change display
     let versionDisplay = '';
-    if (currentVersion && actualTargetVersion !== 'latest') {
-      const updateTypeLabel = updateType !== 'none' ? ` (${updateType} update)` : '';
-      versionDisplay = `${currentVersion} → ${actualTargetVersion}${updateTypeLabel}`;
+    if (currentVersion && actualLatestVersion !== 'latest') {
+      versionDisplay = `${currentVersion} → ${actualLatestVersion}`;
       spinner.text = `Updating ${chalk.bold(pkg.name)}: ${chalk.cyan(versionDisplay)}`;
-    } else if (!currentVersion) {
-      versionDisplay = `installing ${actualTargetVersion}`;
-      spinner.text = `Installing ${chalk.bold(pkg.name)} ${chalk.cyan(actualTargetVersion)}`;
+    } else if (!currentVersion && actualLatestVersion !== 'latest') {
+      versionDisplay = `installing ${actualLatestVersion}`;
+      spinner.text = `Installing ${chalk.bold(pkg.name)} ${chalk.cyan(actualLatestVersion)}`;
     } else {
       versionDisplay = `updating to ${targetVersion}`;
       spinner.text = `Updating ${chalk.bold(pkg.name)} to ${targetVersion}`;
@@ -135,6 +152,47 @@ async function updatePackage(
       env: { ...process.env, NODE_ENV: 'production' }
     });
 
+    // Verify the version after update
+    const newVersion = await getCurrentVersion(pkg.name, isGlobal);
+
+    // Check if we successfully updated to the latest version
+    if (actualLatestVersion !== 'latest' && newVersion !== actualLatestVersion) {
+      // Version changed but not to the latest - this might be an issue
+      if (currentVersion && newVersion === currentVersion) {
+        // Version didn't change at all
+        spinner.succeed(chalk.blue(`✔ ${chalk.bold(pkg.name)} is already at version ${chalk.cyan(currentVersion)} (latest: ${chalk.yellow(actualLatestVersion)})`));
+      } else if (newVersion) {
+        // Version changed but not to latest
+        const updateType = determineUpdateType(currentVersion, newVersion);
+        const updateTypeLabel = updateType !== 'none' ? chalk.gray(` (${updateType})`) : '';
+        spinner.warn(chalk.yellow(`⚠ ${chalk.bold(pkg.name)} updated to ${chalk.cyan(newVersion)} but latest is ${chalk.yellow(actualLatestVersion)}${updateTypeLabel}`));
+      }
+
+      return {
+        success: true,
+        package: pkg.name,
+        version: newVersion || currentVersion || undefined,
+        currentVersion: currentVersion || undefined,
+        updateType: (currentVersion && newVersion && currentVersion !== newVersion)
+          ? determineUpdateType(currentVersion, newVersion)
+          : 'none'
+      };
+    }
+
+    // Check if version didn't change when it should have
+    if (currentVersion && newVersion === currentVersion && actualLatestVersion !== 'latest' && currentVersion !== actualLatestVersion) {
+      spinner.warn(chalk.yellow(`⚠ ${chalk.bold(pkg.name)} remained at ${chalk.cyan(currentVersion)} (latest: ${chalk.yellow(actualLatestVersion)})`));
+
+      return {
+        success: false,
+        package: pkg.name,
+        version: currentVersion,
+        currentVersion: currentVersion,
+        updateType: 'none',
+        error: `Failed to update to latest version ${actualLatestVersion}`
+      };
+    }
+
     // Run postinstall commands if any
     if (pkg.postinstall && pkg.postinstall.length > 0) {
       spinner.text = `Running postinstall for ${chalk.bold(pkg.name)}...`;
@@ -143,12 +201,18 @@ async function updatePackage(
       }
     }
 
+    // Determine actual update type based on real versions
+    const actualUpdateType = determineUpdateType(currentVersion, newVersion || actualLatestVersion);
+
     // Success message with version change
-    if (currentVersion && actualTargetVersion !== 'latest') {
-      const updateTypeLabel = updateType !== 'none' ? chalk.gray(` (${updateType})`) : '';
-      spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)}: ${chalk.cyan(currentVersion)} → ${chalk.cyan(actualTargetVersion)}${updateTypeLabel}`));
-    } else if (!currentVersion) {
-      spinner.succeed(chalk.green(`✅ Installed ${chalk.bold(pkg.name)} ${chalk.cyan(actualTargetVersion)}`));
+    if (currentVersion && newVersion && currentVersion !== newVersion) {
+      const updateTypeLabel = actualUpdateType !== 'none' ? chalk.gray(` (${actualUpdateType})`) : '';
+      spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)}: ${chalk.cyan(currentVersion)} → ${chalk.cyan(newVersion)}${updateTypeLabel}`));
+    } else if (!currentVersion && newVersion) {
+      spinner.succeed(chalk.green(`✅ Installed ${chalk.bold(pkg.name)} ${chalk.cyan(newVersion)}`));
+    } else if (currentVersion && newVersion === currentVersion) {
+      // Already at latest version (caught earlier but just in case)
+      spinner.succeed(chalk.blue(`✔ ${chalk.bold(pkg.name)} is already at the latest version ${chalk.cyan(currentVersion)}`));
     } else {
       spinner.succeed(chalk.green(`✅ Updated ${chalk.bold(pkg.name)} to ${targetVersion}`));
     }
@@ -161,9 +225,9 @@ async function updatePackage(
     return {
       success: true,
       package: pkg.name,
-      version: actualTargetVersion,
+      version: newVersion || actualLatestVersion,
       currentVersion: currentVersion || undefined,
-      updateType
+      updateType: actualUpdateType
     };
   } catch (error) {
     let errorMessage: string;
@@ -324,11 +388,15 @@ export async function printSummary(results: UpdateResult[]): Promise<void> {
   const successful = results.filter(r => r.success);
   const failed = results.filter(r => !r.success);
 
-  if (successful.length > 0) {
-    console.log(chalk.green(`✅ Successfully updated ${successful.length} package(s):`));
-    successful.forEach(r => {
+  // Separate already up-to-date packages from actual updates
+  const upToDate = successful.filter(r => r.updateType === 'none' && r.currentVersion === r.version);
+  const actuallyUpdated = successful.filter(r => r.updateType !== 'none' || r.currentVersion !== r.version);
+
+  if (actuallyUpdated.length > 0) {
+    console.log(chalk.green(`✅ Successfully updated ${actuallyUpdated.length} package(s):`));
+    actuallyUpdated.forEach(r => {
       let versionInfo = '';
-      if (r.currentVersion && r.version) {
+      if (r.currentVersion && r.version && r.currentVersion !== r.version) {
         const updateTypeLabel = r.updateType && r.updateType !== 'none'
           ? chalk.gray(` (${r.updateType})`)
           : '';
@@ -342,10 +410,17 @@ export async function printSummary(results: UpdateResult[]): Promise<void> {
     });
   }
 
+  if (upToDate.length > 0) {
+    console.log(chalk.blue(`\n✔ Already at latest version (${upToDate.length} package(s)):`));
+    upToDate.forEach(r => {
+      console.log(chalk.blue(`   • ${r.package}: ${chalk.cyan(r.version)}`));
+    });
+  }
+
   if (failed.length > 0) {
     console.log(chalk.red(`\n❌ Failed to update ${failed.length} package(s):`));
     failed.forEach(r => {
-      console.log(chalk.red(`   • ${r.package}: ${r.error}`));
+      console.log(chalk.red(`   • ${r.package}: ${r.error || 'Update failed'}`));
     });
   }
 
